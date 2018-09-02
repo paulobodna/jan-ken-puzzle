@@ -69,26 +69,26 @@ void delete_matrix(int ***matrix, int row) {
 int recursive_play(int **matrix, int row, int col, int actual_row, int actual_col);
 
 void move_to(int **matrix, int row, int col, int actual_row, int actual_col, int new_row, int new_col) {
-    int peace = matrix[actual_row][actual_col];
+    int piece = matrix[actual_row][actual_col];
 
     // fazendo o movimento
-    matrix[new_row][new_col] = peace;
+    matrix[new_row][new_col] = piece;
     matrix[actual_row][actual_col] = 0;
 
-    int qtd_peaces = 0;
+    int qtd_pieces = 0;
     for(int i = 0; i < row; i++) {
         for(int j = 0; j < col; j++) {
-            qtd_peaces += recursive_play(matrix, row, col, i, j);
+            qtd_pieces += recursive_play(matrix, row, col, i, j);
         }
     }
 
     // desfazendo o movimento
-    matrix[actual_row][actual_col] = peace;
-    matrix[new_row][new_col] = (peace%3)+1;
+    matrix[actual_row][actual_col] = piece;
+    matrix[new_row][new_col] = (piece%3)+1;
 
     // imprimir caso a resposta tenha sido encontrada
-    if(qtd_peaces == 1) {
-        printf("%d %d %d\n", new_row+1, new_col+1, peace);
+    if(qtd_pieces == 1) {
+        printf("%d %d %d\n", new_row+1, new_col+1, piece);
     }
 
     return;
@@ -99,25 +99,25 @@ int recursive_play(int **matrix, int row, int col, int actual_row, int actual_co
         return 0;
     }
 
-    int peace = matrix[actual_row][actual_col];
+    int piece = matrix[actual_row][actual_col];
 
     // -> ir para direita
-    if(actual_col < col-1 && matrix[actual_row][actual_col+1] == (peace%3)+1) {
+    if(actual_col < col-1 && matrix[actual_row][actual_col+1] == (piece%3)+1) {
         move_to(matrix, row, col, actual_row, actual_col, actual_row, actual_col+1);
     }
 
     // -> ir para baixo
-    if(actual_row < row-1 && matrix[actual_row+1][actual_col] == (peace%3)+1) {
+    if(actual_row < row-1 && matrix[actual_row+1][actual_col] == (piece%3)+1) {
         move_to(matrix, row, col, actual_row, actual_col, actual_row+1, actual_col);
     }
     
     // -> ir para esquerda
-    if(actual_col > 0 && matrix[actual_row][actual_col-1] == (peace%3)+1) {
+    if(actual_col > 0 && matrix[actual_row][actual_col-1] == (piece%3)+1) {
         move_to(matrix, row, col, actual_row, actual_col, actual_row, actual_col-1);
     }
 
     // -> ir para cima
-    if(actual_row > 0 && matrix[actual_row-1][actual_col] == (peace%3)+1) {
+    if(actual_row > 0 && matrix[actual_row-1][actual_col] == (piece%3)+1) {
         move_to(matrix, row, col, actual_row, actual_col, actual_row-1, actual_col);
     }
 
@@ -126,16 +126,16 @@ int recursive_play(int **matrix, int row, int col, int actual_row, int actual_co
 
 void find_solutions(int **matrix, int row, int col) {
     
-    int qtd_peaces = 0;
+    int qtd_pieces = 0;
     for(int i = 0; i < row; i ++) {
         for(int j = 0; j < col; j++) {
             if(matrix[i][j] != 0) {
-                qtd_peaces += recursive_play(matrix, row, col, i, j);
+                qtd_pieces += recursive_play(matrix, row, col, i, j);
             }
         }
     }
 
-    if(qtd_peaces == 1) {
+    if(qtd_pieces == 1) {
         printf("Nao ha movimentos possiveis.\n");
     }
 
