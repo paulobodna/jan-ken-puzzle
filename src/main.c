@@ -10,8 +10,10 @@
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  Paulo Bodnarchuki, paulo.henrique.cruz@usp.br
- *         Nº USP:  9790944
+ *        Authors:  Paulo Bodnarchuki (9790944)
+ *                  Eduardo Zaboto Mirolli (9778501)
+ *                  Rodrigo Noventa Junior (9791243)
+ *
  *
  * =====================================================================================
  */
