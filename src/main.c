@@ -203,8 +203,8 @@ void delete_sol(SOLUTION **sol) {
 void print_sol (SOLUTION *sol) {
     printf("%d\n%d\n", sol->qtd_sol, sol->qtd_cases);
     for(int i = 0; i < sol->qtd_cases; i++) {
-        printf("%d %d %d\n", sol->cases[i].row,
-                            sol->cases[i].col,
+        printf("%d %d %d\n", sol->cases[i].row+1,
+                            sol->cases[i].col+1,
                             sol->cases[i].piece);
     }
 
@@ -217,8 +217,17 @@ int comp(const void *elem1, const void *elem2) {
     ENDCASE f = *((ENDCASE *)elem1);
     ENDCASE s = *((ENDCASE *)elem2);
 
-    if(f.row <= s.row && f.col <= s.col && f.piece < s.piece) return -1;
-    else return 1;
+    if(f.row > s.row) return 1;
+    else if (f.row < s.row) return -1;
+    else {
+        if(f.col > s.col) return 1;
+        else if(f.col < s.col) return -1;
+        else {
+           if(f.piece > s.piece) return 1;
+           else return -1;
+        }
+    }
+
 
     return 0;
 }
