@@ -20,15 +20,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-typedef struct endcase {
-    int row, col, piece;
-} ENDCASE;
+#include <map>
 
 typedef struct solution {
     int qtd_sol;
     int qtd_cases;
-    ENDCASE *cases;
 } SOLUTION;
 
 void create_matrix(int ***matrix, int row, int col) {
@@ -78,158 +74,181 @@ void delete_matrix(int ***matrix, int row) {
     return;
 }
 
-int recursive_play(int **matrix, int row, int col, int actual_row, int actual_col, SOLUTION *sol);
+//void create_sol(SOLUTION **sol) {
+//
+//    (*sol) = (SOLUTION *) malloc(sizeof(SOLUTION));
+//
+//    (*sol)->qtd_sol = 0;
+//    (*sol)->qtd_cases = 0;
+//
+//    return;
+//}
 
-// verifica se ha uma solucao identica ja encontrada
-int new_case(SOLUTION *sol, int new_row, int new_col, int piece) {
-    for(int i = 0; i < sol->qtd_cases; i++) {
-        if(sol->cases[i].row == new_row &&
-            sol->cases[i].col == new_col &&
-            sol->cases[i].piece == piece) {
-            return 0;
+//void delete_sol(SOLUTION **sol) {
+//    free((*sol)->cases);
+//    free((*sol));
+//
+//    (*sol) = NULL;
+//
+//    return;
+//}
+
+long unsigned int to_int(int **matrix, int row, int col) {
+
+    long unsigned int b = 0;
+    
+    int counter = 0;
+    for(int i = 0; i < row; i++) {
+        for(int j = 0; j < col; j++) {
+            b |= matrix[i][j] << (counter*2);
+            counter++;
         }
     }
 
-    return 1;
+    return b;
 }
+
+int how_many_pieces(int **matrix, int row, int col) {
+    int qtd_pieces = 0;
+
+    printf("peças\n");
+    for(int i = 0; i < row; i++) {
+        for(int j = 0; j < col; j++) {
+            if(matrix[i][j] > 0) qtd_pieces++;
+        }
+    }
+    return qtd_pieces;
+}
+
+int recursive_play(int **matrix, int row, int col, int actual_row, int actual_col, int qtd_pieces, std::map<long unsigned int, int> &table);
 
 // realiza o movimento requisitado recursivamente,
 // desfazendo-o ao retornar
-void move_to(int **matrix, int row, int col, int actual_row, int actual_col, int new_row, int new_col, SOLUTION *sol) {
-    int piece = matrix[actual_row][actual_col];
+int move_to(int **matrix, int row, int col, int actual_row, int actual_col, int new_row, int new_col, int qtd_pieces, std::map<long unsigned int, int> &table) {
 
     // fazendo o movimento
+    int piece = matrix[actual_row][actual_col];
     matrix[new_row][new_col] = piece;
     matrix[actual_row][actual_col] = 0;
 
-    int qtd_pieces = 0;
+    // verifica se a configuração nova do tabuleiro já está gravada no map
+    long unsigned int number = to_int(matrix, row, col);
+    if(table.find(number) != table.end()) {
+        return table[number];
+    }
+
+    int solutions = 0;
     for(int i = 0; i < row; i++) {
         for(int j = 0; j < col; j++) {
-            qtd_pieces += recursive_play(matrix, row, col, i, j, sol);
+            solutions += recursive_play(matrix, row, col, i, j, qtd_pieces, table);
         }
     }
+    
+    if(qtd_pieces <= 1) {
+        solutions = 1;
+    }
+    // salvando a configuracao no map
+    table[number] = solutions;
 
     // desfazendo o movimento
     matrix[actual_row][actual_col] = piece;
     matrix[new_row][new_col] = (piece%3)+1;
 
-    // salvar caso a resposta tenha sido encontrada
-    if(qtd_pieces == 1) {
-        if(new_case(sol, new_row, new_col, piece)) {
-            sol->cases = realloc(sol->cases, sizeof(ENDCASE) * (sol->qtd_cases+1));
-            sol->cases[sol->qtd_cases].row = new_row;
-            sol->cases[sol->qtd_cases].col = new_col;
-            sol->cases[sol->qtd_cases].piece = piece;
-
-
-            sol->qtd_cases++;
-        }
-
-        sol->qtd_sol++;
-    }
-
-    return;
+    return solutions;
 }
 
 // realiza as jogadas recursivamente
-int recursive_play(int **matrix, int row, int col, int actual_row, int actual_col, SOLUTION *sol) {
+int recursive_play(int **matrix, int row, int col, int actual_row, int actual_col, int qtd_pieces, std::map<long unsigned int, int> &table) {
     if(matrix[actual_row][actual_col] == 0) {
         return 0;
     }
+
+    int solutions = 0;
 
     int piece = matrix[actual_row][actual_col];
 
     // -> ir para direita
     if(actual_col < col-1 && matrix[actual_row][actual_col+1] == (piece%3)+1) {
-        move_to(matrix, row, col, actual_row, actual_col, actual_row, actual_col+1, sol);
+        solutions += move_to(matrix, row, col, actual_row, actual_col, actual_row, actual_col+1, qtd_pieces-1, table);
     }
 
     // -> ir para baixo
     if(actual_row < row-1 && matrix[actual_row+1][actual_col] == (piece%3)+1) {
-        move_to(matrix, row, col, actual_row, actual_col, actual_row+1, actual_col, sol);
+        solutions += move_to(matrix, row, col, actual_row, actual_col, actual_row+1, actual_col, qtd_pieces-1, table);
     }
     
     // -> ir para esquerda
     if(actual_col > 0 && matrix[actual_row][actual_col-1] == (piece%3)+1) {
-        move_to(matrix, row, col, actual_row, actual_col, actual_row, actual_col-1, sol);
+        solutions += move_to(matrix, row, col, actual_row, actual_col, actual_row, actual_col-1, qtd_pieces-1, table);
     }
 
     // -> ir para cima
     if(actual_row > 0 && matrix[actual_row-1][actual_col] == (piece%3)+1) {
-        move_to(matrix, row, col, actual_row, actual_col, actual_row-1, actual_col, sol);
+        solutions += move_to(matrix, row, col, actual_row, actual_col, actual_row-1, actual_col, qtd_pieces-1, table);
     }
 
-    return 1;
+    return solutions;
 }
 
-void find_solutions(int **matrix, int row, int col, SOLUTION *sol) {
-    
-    int qtd_pieces = 0;
+int find_solutions(int **matrix, int row, int col, std::map<long unsigned int, int> &table) {
+    printf("Comecou a encontrar solucoes.\n");
+    int qtd_pieces = how_many_pieces(matrix, row, col);
+    printf("Pecas no jogo: %d\n", qtd_pieces);
+
+    int solutions = 0;
     for(int i = 0; i < row; i ++) {
         for(int j = 0; j < col; j++) {
             if(matrix[i][j] != 0) {
-                qtd_pieces += recursive_play(matrix, row, col, i, j, sol);
+                printf("Posicao [%d][%d]:\n", i, j);
+                solutions += recursive_play(matrix, row, col, i, j, qtd_pieces, table);
             }
         }
     }
 
-    if(qtd_pieces == 1) {
-        printf("Nao ha movimentos possiveis.\n");
-    }
-
-    return;
+    return solutions;
 }
 
-void create_sol(SOLUTION **sol) {
+// incluir map
+void print_sol (int row, int col, int sol, std::map<long unsigned int, int> &table) {
+    printf("%d\n", sol);
 
-    (*sol) = (SOLUTION *) malloc(sizeof(SOLUTION));
+    int **matrix;
+    create_matrix(&matrix, row, col);
 
-    (*sol)->qtd_sol = 0;
-    (*sol)->qtd_cases = 0;
-    (*sol)->cases = NULL;
+    int qtd_cases = 0;
+    for(int i = 0; i < row; i++) {
+        for(int j = 0; j < col; j++) {
+            for(int k = 1; k < 4; k++) {
+                matrix[i][j] = k;
+                long unsigned int number = to_int(matrix, row, col);
 
-    return;
-}
-
-void delete_sol(SOLUTION **sol) {
-    free((*sol)->cases);
-    free((*sol));
-
-    (*sol) = NULL;
-
-    return;
-}
-
-void print_sol (SOLUTION *sol) {
-    printf("%d\n%d\n", sol->qtd_sol, sol->qtd_cases);
-    for(int i = 0; i < sol->qtd_cases; i++) {
-        printf("%d %d %d\n", sol->cases[i].row+1,
-                            sol->cases[i].col+1,
-                            sol->cases[i].piece);
-    }
-
-    return;
-}
-
-// funcao de comparacao para ordenar casos
-int comp(const void *elem1, const void *elem2) {
-
-    ENDCASE f = *((ENDCASE *)elem1);
-    ENDCASE s = *((ENDCASE *)elem2);
-
-    if(f.row > s.row) return 1;
-    else if (f.row < s.row) return -1;
-    else {
-        if(f.col > s.col) return 1;
-        else if(f.col < s.col) return -1;
-        else {
-           if(f.piece > s.piece) return 1;
-           else return -1;
+                if(table.find(number) != table.end()) {
+                    qtd_cases++;
+                }
+            }
+            matrix[i][j] = 0;
         }
     }
 
+    printf("%d\n", qtd_cases);
 
-    return 0;
+    for(int i = 0; i < row; i++) {
+        for(int j = 0; j < col; j++) {
+            for(int k = 1; k < 4; k++) {
+                matrix[i][j] = k;
+                long unsigned int number = to_int(matrix, row, col);
+
+                if(table.find(number) != table.end()) {
+                    printf("%d %d %d\n", i+1, j+1, k);
+                }
+            }
+            matrix[i][j] = 0;
+        }
+    }
+    
+    delete_matrix(&matrix, row);
+
+    return;
 }
 
 int main(int argc, char* argv[]) {
@@ -238,19 +257,20 @@ int main(int argc, char* argv[]) {
     scanf("%d %d", &row, &col);
 
     int **matrix;
-    SOLUTION *sol;
+//    SOLUTION *sol;
 
     create_matrix(&matrix, row, col);
-    create_sol(&sol);
+//    create_sol(&sol);
+    std::map<long unsigned int, int> table;
 
     read_matrix(matrix, row, col);
 
-    find_solutions(matrix, row, col, sol);
-    // ordenar casos
-    qsort(sol->cases, sol->qtd_cases, sizeof(ENDCASE), comp);
-    print_sol(sol);
+    int sol = find_solutions(matrix, row, col, table);
+    printf("Percorreu o mapa.\n");
+    print_sol(row, col, sol, table);
+    printf("Terminou de imprimir a resposta.\n");
 
-    delete_sol(&sol);
+//    delete_sol(&sol);
     delete_matrix(&matrix, row);
 
     return 0;
